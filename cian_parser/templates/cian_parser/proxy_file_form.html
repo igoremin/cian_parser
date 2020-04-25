@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}
+     Прокси файл
+{% endblock %}
+
+{% block results %}
+
+    {% if old_file_name %}
+        <h3>Файл с прокси на данный момент : {{ old_file_name }}</h3>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Сохранить</button>
+
+    </form>
+
+{% endblock %}

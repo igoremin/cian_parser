@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Новый парсинг
+{% endblock %}
+
+{% block results %}
+    {% if error_message %}
+        <h1>{{ error_message }}</h1>
+    {% else %}
+        <form method="post">
+            {% csrf_token %}
+            <h1>{{ message }}</h1>
+            <button type="submit">Начать</button>
+        </form>
+    {% endif %}
+{% endblock %}

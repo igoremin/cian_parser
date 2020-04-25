@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Главная
+{% endblock %}
+
+{% block results %}
+    <h1>
+        RESULTS
+    </h1>
+    {% for result in all_results %}
+        <p><a href="{{ result.get_absolute_url }}">{{ result.created_date }}</a></p>
+    {% endfor %}
+
+{% endblock %}

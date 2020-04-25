@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ parser.parser_name}}
+{% endblock %}
+
+
+{% block results %}
+
+    {% if is_paginator %}
+
+        <nav aria-label="...">
+            <ul class="pagination">
+                {% if prev_url %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ parser.get_absolute_url }}">Начало</a>
+                    </li>
+                {% endif %}
+                <li class="page-item {% if not prev_url %} disabled {% endif %}">
+                    <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
+                </li>
+
+
+                {% for n in page_object.paginator.page_range %}
+
+                    {% if page_object.number == n %}
+                        <li class="page-item active" aria-current="page">
+                            <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
+                        </li>
+                    {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
+
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ n }}">{{ n }}</a>
+                        </li>
+
+                    {% endif %}
+                {% endfor %}
+
+
+                <li class="page-item {% if not next_url %} disabled {% endif %}">
+                    <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
+                </li>
+                {% if next_url %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ last_url }}">Конец</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+    {% endif %}
+
+    <div class="row">
+        <div class="col-2">
+            <p>Название</p>
+        </div>
+        <div class="col-2">
+            <p>Цена</p>
+        </div>
+        <div class="col-1">
+            <p>Площадь</p>
+        </div>
+        <div class="col-2">
+            <p>Этаж</p>
+        </div>
+        <div class="col-3">
+            <p>Адресс</p>
+        </div>
+        <div class="col-2">
+            <p>Ссылка</p>
+        </div>
+    </div>
+
+    <hr>
+
+    {% for result in page_object.object_list %}
+        <div class="row">
+            <div class="col-2">
+                <p>{{ result.title }}</p>
+            </div>
+            <div class="col-2">
+                <p>{{ result.price }}</p>
+            </div>
+            <div class="col-1">
+                <p>{{ result.area }}</p>
+            </div>
+            <div class="col-2">
+                <p>{{ result.floor }}</p>
+            </div>
+            <div class="col-3">
+                <p>{{ result.address }}</p>
+            </div>
+            <div class="col-2">
+                <p><a href="{{ result.url }}" target="_blank">Ссылка</a></p>
+            </div>
+        </div>
+
+    {% endfor %}
+
+    {% if is_paginator %}
+
+        <nav aria-label="...">
+            <ul class="pagination">
+                {% if prev_url %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ parser.get_absolute_url }}">Начало</a>
+                    </li>
+                {% endif %}
+                <li class="page-item {% if not prev_url %} disabled {% endif %}">
+                    <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
+                </li>
+
+
+                {% for n in page_object.paginator.page_range %}
+
+                    {% if page_object.number == n %}
+                        <li class="page-item active" aria-current="page">
+                            <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
+                        </li>
+                    {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
+
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ n }}">{{ n }}</a>
+                        </li>
+
+                    {% endif %}
+                {% endfor %}
+
+
+                <li class="page-item {% if not next_url %} disabled {% endif %}">
+                    <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
+                </li>
+                {% if next_url %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ last_url }}">Конец</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+    {% endif %}
+
+{% endblock %}

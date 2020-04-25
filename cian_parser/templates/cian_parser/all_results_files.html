@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Файлы с результатами
+{% endblock %}
+
+{% block results %}
+
+    <h3>Файлы с результатами</h3>
+
+    <hr>
+
+    {% for file in all_files %}
+        <p><a href="{{ file.result_file.url }}" download>{{ file }}</a></p>
+    {% endfor %}
+
+
+{% endblock %}

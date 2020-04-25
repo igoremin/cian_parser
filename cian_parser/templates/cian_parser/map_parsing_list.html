@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Список парсингов карт
+{% endblock %}
+
+{% block results %}
+
+    {% for parsing in all_map_parsings %}
+        <p>
+            <a href="{{ parsing.get_absolute_url }}">
+                {{ parsing.parser_name }} : {{ parsing.created_date }}
+            </a>
+        </p>
+    {% endfor %}
+
+{% endblock %}
