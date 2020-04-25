@@ -77,7 +77,6 @@ class Bot(Thread):
         self.target = []
 
     def run(self):
-        print('Старт')
         self.get_new_price()
 
     def reload_bot(self):
@@ -325,7 +324,7 @@ def get_json(price):
     data = json_request(url)
     if data is not False:
         if 300 < int(data['data']['offers_count']) <= 1500:
-            print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']} , mod 1")
+            # print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']} , mod 1")
             add_data(data)
             for p in [2, 3, 4, 5]:
                 new_url_p = f'{url}&p={p}'
