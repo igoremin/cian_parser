@@ -7,197 +7,202 @@
 
 {% block results %}
 
-    {% if proc.status == True %}
-        <h4>Статус : {{ proc.status }} , PID : {{ proc.pid }}</h4>
+    {% if error_message %}
+        <h1>{{ error_message }}</h1>
+    {% else %}
 
-        <form method="post">
-            {% csrf_token %}
-            <button type="submit" value="YES" name="stop_parsing">Остановить парсинг</button>
-        </form>
+        {% if proc.status == True %}
+            <h4>Статус : {{ proc.status }} , PID : {{ proc.pid }}</h4>
 
-        Прогресс
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" value="YES" name="stop_parsing">Остановить парсинг</button>
+            </form>
 
-        <script>
-            function status_bar() {
-                const intervalId = setInterval(() => {
-                    $.ajax({
-                        type: 'GET',
-                        dataType: 'json',
-                        url: '/',
-                        data: 'status=' + 'get_status',
-                        error: function (result) {
-                            console.log("Что-то пошло не так, попробуйте снова!");
-                        },
-                        success: function (result) {
-                            console.log(result)
-                            let progress_bar = document.getElementById('progress_bar');
-                            progress_bar.setAttribute('aria-valuenow', result.done_urls);
-                            progress_bar.style.width = result.parser_progress + '%';
-                            progress_bar.innerText = result.parser_progress + '%';
-                            document.getElementById('done_urls_value').innerText = 'Количество объектов : ' + result.done_urls;
+            Прогресс
 
-                            if (result.status === false) {
-                                clearInterval(intervalId);
-                                window.location.reload()
+            <script>
+                function status_bar() {
+                    const intervalId = setInterval(() => {
+                        $.ajax({
+                            type: 'GET',
+                            dataType: 'json',
+                            url: '/',
+                            data: 'status=' + 'get_status',
+                            error: function (result) {
+                                console.log("Что-то пошло не так, попробуйте снова!");
+                            },
+                            success: function (result) {
+                                console.log(result)
+                                let progress_bar = document.getElementById('progress_bar');
+                                progress_bar.setAttribute('aria-valuenow', result.done_urls);
+                                progress_bar.style.width = result.parser_progress + '%';
+                                progress_bar.innerText = result.parser_progress + '%';
+                                document.getElementById('done_urls_value').innerText = 'Количество объектов : ' + result.done_urls;
+
+                                if (result.status === false) {
+                                    clearInterval(intervalId);
+                                    window.location.reload()
+                                }
                             }
-                        }
-                    });
-                }, 30000);
-            }
+                        });
+                    }, 30000);
+                }
 
-            console.log('START STATUS BAR')
-            status_bar()
-        </script>
+                console.log('START STATUS BAR')
+                status_bar()
+            </script>
 
-        <div class="progress">
-            <div id="progress_bar" class="progress-bar" role="progressbar" style="width: 30%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax={{ target.target_value }}>0%</div>
-        </div>
+            <div class="progress">
+                <div id="progress_bar" class="progress-bar" role="progressbar" style="width: 30%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax={{ target.target_value }}>0%</div>
+            </div>
 
-    {% endif %}
+        {% endif %}
 
-    <hr>
+        <hr>
 
-    <h3>Цель : {{ target.target_value }}</h3>
-    <h3 id="done_urls_value">Количество объектов : {{ all_results_len }}</h3>
+        <h3>Цель : {{ target.target_value }}</h3>
+        <h3 id="done_urls_value">Количество объектов : {{ all_results_len }}</h3>
 
-    <hr>
+        <hr>
 
-    <div class="row">
-        <div class="col-6 text-center">
-            <h4 class="pb-4">
-                {% if parser_info.result_file %}
-                    <a href="{{ parser_info.result_file.url }}" download>Скачать файл</a>
-                {% else %}
-                    <form method="post">
-                        {% csrf_token %}
-                        <button type="submit" value="YES" name="create_file">Сформировать файл</button>
-                    </form>
-                {% endif %}
-            </h4>
-        </div>
-    </div>
-
-    <hr>
-
-    {% if is_paginator %}
-
-        <nav aria-label="...">
-            <ul class="pagination">
-                {% if prev_url %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ parsing.get_absolute_url }}">Начало</a>
-                    </li>
-                {% endif %}
-                <li class="page-item {% if not prev_url %} disabled {% endif %}">
-                    <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
-                </li>
-
-
-                {% for n in page_object.paginator.page_range %}
-
-                    {% if page_object.number == n %}
-                        <li class="page-item active" aria-current="page">
-                            <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
-                        </li>
-                    {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
-
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ n }}">{{ n }}</a>
-                        </li>
-
+        <div class="row">
+            <div class="col-6 text-center">
+                <h4 class="pb-4">
+                    {% if parser_info.result_file %}
+                        <a href="{{ parser_info.result_file.url }}" download>Скачать файл</a>
+                    {% else %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" value="YES" name="create_file">Сформировать файл</button>
+                        </form>
                     {% endif %}
-                {% endfor %}
+                </h4>
+            </div>
+        </div>
 
+        <hr>
 
-                <li class="page-item {% if not next_url %} disabled {% endif %}">
-                    <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
-                </li>
-                {% if next_url %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ last_url }}">Конец</a>
+        {% if is_paginator %}
+
+            <nav aria-label="...">
+                <ul class="pagination">
+                    {% if prev_url %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ parsing.get_absolute_url }}">Начало</a>
+                        </li>
+                    {% endif %}
+                    <li class="page-item {% if not prev_url %} disabled {% endif %}">
+                        <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
                     </li>
-                {% endif %}
-            </ul>
-        </nav>
 
-    {% endif %}
 
-    <div class="row">
-        <div class="col-2">
-            <h3>Название</h3>
-        </div>
-        <div class="col-2">
-            <h3>Цена</h3>
-        </div>
-        <div class="col-6">
-            <h3>Адресс</h3>
-        </div>
-        <div class="col-2">
-            <h3>Ссылка</h3>
-        </div>
-    </div>
+                    {% for n in page_object.paginator.page_range %}
 
-    <hr>
+                        {% if page_object.number == n %}
+                            <li class="page-item active" aria-current="page">
+                                <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
+                            </li>
+                        {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
 
-    {% for result in page_object.object_list %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ n }}">{{ n }}</a>
+                            </li>
+
+                        {% endif %}
+                    {% endfor %}
+
+
+                    <li class="page-item {% if not next_url %} disabled {% endif %}">
+                        <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
+                    </li>
+                    {% if next_url %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ last_url }}">Конец</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+        {% endif %}
+
         <div class="row">
             <div class="col-2">
-                <p>{{ result.title }}</p>
+                <h3>Название</h3>
             </div>
             <div class="col-2">
-                <p>{{ result.price }}</p>
+                <h3>Цена</h3>
             </div>
             <div class="col-6">
-                <p>{{ result.address }}</p>
+                <h3>Адресс</h3>
             </div>
             <div class="col-2">
-                <p><a href="{{ result.get_absolute_url }}" target="_blank">Подробнее</a></p>
+                <h3>Ссылка</h3>
             </div>
         </div>
 
-    {% endfor %}
+        <hr>
 
-    {% if is_paginator %}
+        {% for result in page_object.object_list %}
+            <div class="row">
+                <div class="col-2">
+                    <p>{{ result.title }}</p>
+                </div>
+                <div class="col-2">
+                    <p>{{ result.price }}</p>
+                </div>
+                <div class="col-6">
+                    <p>{{ result.address }}</p>
+                </div>
+                <div class="col-2">
+                    <p><a href="{{ result.get_absolute_url }}" target="_blank">Подробнее</a></p>
+                </div>
+            </div>
 
-        <nav aria-label="...">
-            <ul class="pagination">
-                {% if prev_url %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ parsing.get_absolute_url }}">Начало</a>
-                    </li>
-                {% endif %}
-                <li class="page-item {% if not prev_url %} disabled {% endif %}">
-                    <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
-                </li>
+        {% endfor %}
 
+        {% if is_paginator %}
 
-                {% for n in page_object.paginator.page_range %}
-
-                    {% if page_object.number == n %}
-                        <li class="page-item active" aria-current="page">
-                            <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
-                        </li>
-                    {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
-
+            <nav aria-label="...">
+                <ul class="pagination">
+                    {% if prev_url %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ n }}">{{ n }}</a>
+                            <a class="page-link" href="{{ parsing.get_absolute_url }}">Начало</a>
                         </li>
-
                     {% endif %}
-                {% endfor %}
-
-
-                <li class="page-item {% if not next_url %} disabled {% endif %}">
-                    <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
-                </li>
-                {% if next_url %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ last_url }}">Конец</a>
+                    <li class="page-item {% if not prev_url %} disabled {% endif %}">
+                        <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
                     </li>
-                {% endif %}
-            </ul>
-        </nav>
 
+
+                    {% for n in page_object.paginator.page_range %}
+
+                        {% if page_object.number == n %}
+                            <li class="page-item active" aria-current="page">
+                                <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
+                            </li>
+                        {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
+
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ n }}">{{ n }}</a>
+                            </li>
+
+                        {% endif %}
+                    {% endfor %}
+
+
+                    <li class="page-item {% if not next_url %} disabled {% endif %}">
+                        <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
+                    </li>
+                    {% if next_url %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ last_url }}">Конец</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+
+        {% endif %}
     {% endif %}
 
 {% endblock %}

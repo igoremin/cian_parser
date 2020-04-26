@@ -6,13 +6,16 @@
 
 {% block results %}
 
-    <h3>Файлы с результатами</h3>
+    {% if error_message %}
+        <h1>{{ error_message }}</h1>
+    {% else %}
+        <h3>Файлы с результатами</h3>
 
-    <hr>
+        <hr>
 
-    {% for file in all_files %}
-        <p><a href="{{ file.result_file.url }}" download>{{ file }}</a></p>
-    {% endfor %}
-
+        {% for file in all_files %}
+            <p><a href="{{ file.result_file.url }}" download>{{ file }}</a></p>
+        {% endfor %}
+    {% endif %}
 
 {% endblock %}

@@ -586,7 +586,7 @@ class Proxy:
             }
 
             if len(self.proxies) < 1:
-                with open(f'{MEDIA_DIR}/proxies/proxy.txt', 'r', encoding='utf-8') as proxy_file:
+                with open(f'{MEDIA_DIR}/{proxy_file_name}', 'r', encoding='utf-8') as proxy_file:
                     all_proxies = [row.strip() for row in proxy_file.readlines()]
                     not_block_proxies = []
                     for p in all_proxies:
