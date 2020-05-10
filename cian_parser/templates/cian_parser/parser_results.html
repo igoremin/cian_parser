@@ -12,12 +12,6 @@
     {% else %}
 
         {% if proc.status == True %}
-            <h4>Статус : {{ proc.status }} , PID : {{ proc.pid }}</h4>
-
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" value="YES" name="stop_parsing">Остановить парсинг</button>
-            </form>
 
             Прогресс
 
@@ -39,6 +33,7 @@
                                 progress_bar.style.width = result.parser_progress + '%';
                                 progress_bar.innerText = result.parser_progress + '%';
                                 document.getElementById('done_urls_value').innerText = 'Количество объектов : ' + result.done_urls;
+                                document.getElementById('done_map_value').innerText = 'Количество объектов из карт: ' + result.done_map_count;
 
                                 if (result.status === false) {
                                     clearInterval(intervalId);
@@ -46,7 +41,7 @@
                                 }
                             }
                         });
-                    }, 30000);
+                    }, 60000);
                 }
 
                 console.log('START STATUS BAR')
@@ -62,147 +57,24 @@
         <hr>
 
         <h3>Цель : {{ target.target_value }}</h3>
-        <h3 id="done_urls_value">Количество объектов : {{ all_results_len }}</h3>
+        <h3 id="done_urls_value">Количество объектов : {{ all_results_count }}</h3>
+        <h3 id="done_map_value">Количество объектов из карт : {{ all_map_count }}</h3>
 
         <hr>
 
         <div class="row">
             <div class="col-6 text-center">
                 <h4 class="pb-4">
-                    {% if parser_info.result_file %}
-                        <a href="{{ parser_info.result_file.url }}" download>Скачать файл</a>
-                    {% else %}
-                        <form method="post">
-                            {% csrf_token %}
-                            <button type="submit" value="YES" name="create_file">Сформировать файл</button>
-                        </form>
-                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" value="YES" name="create_file">Сформировать файл</button>
+                    </form>
                 </h4>
             </div>
         </div>
 
         <hr>
 
-        {% if is_paginator %}
-
-            <nav aria-label="...">
-                <ul class="pagination">
-                    {% if prev_url %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ parsing.get_absolute_url }}">Начало</a>
-                        </li>
-                    {% endif %}
-                    <li class="page-item {% if not prev_url %} disabled {% endif %}">
-                        <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
-                    </li>
-
-
-                    {% for n in page_object.paginator.page_range %}
-
-                        {% if page_object.number == n %}
-                            <li class="page-item active" aria-current="page">
-                                <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
-                            </li>
-                        {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
-
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ n }}">{{ n }}</a>
-                            </li>
-
-                        {% endif %}
-                    {% endfor %}
-
-
-                    <li class="page-item {% if not next_url %} disabled {% endif %}">
-                        <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
-                    </li>
-                    {% if next_url %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ last_url }}">Конец</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-
-        {% endif %}
-
-        <div class="row">
-            <div class="col-2">
-                <h3>Название</h3>
-            </div>
-            <div class="col-2">
-                <h3>Цена</h3>
-            </div>
-            <div class="col-6">
-                <h3>Адресс</h3>
-            </div>
-            <div class="col-2">
-                <h3>Ссылка</h3>
-            </div>
-        </div>
-
-        <hr>
-
-        {% for result in page_object.object_list %}
-            <div class="row">
-                <div class="col-2">
-                    <p>{{ result.title }}</p>
-                </div>
-                <div class="col-2">
-                    <p>{{ result.price }}</p>
-                </div>
-                <div class="col-6">
-                    <p>{{ result.address }}</p>
-                </div>
-                <div class="col-2">
-                    <p><a href="{{ result.get_absolute_url }}" target="_blank">Подробнее</a></p>
-                </div>
-            </div>
-
-        {% endfor %}
-
-        {% if is_paginator %}
-
-            <nav aria-label="...">
-                <ul class="pagination">
-                    {% if prev_url %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ parsing.get_absolute_url }}">Начало</a>
-                        </li>
-                    {% endif %}
-                    <li class="page-item {% if not prev_url %} disabled {% endif %}">
-                        <a class="page-link" href="{{ prev_url }}" tabindex="-1" aria-disabled="true">Назад</a>
-                    </li>
-
-
-                    {% for n in page_object.paginator.page_range %}
-
-                        {% if page_object.number == n %}
-                            <li class="page-item active" aria-current="page">
-                                <p class="page-link">{{ n }} <span class="sr-only">(current)</span></p>
-                            </li>
-                        {% elif n > page_object.number|add:-3 and n < page_object.number|add:3 %}
-
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ n }}">{{ n }}</a>
-                            </li>
-
-                        {% endif %}
-                    {% endfor %}
-
-
-                    <li class="page-item {% if not next_url %} disabled {% endif %}">
-                        <a class="page-link" href="{{ next_url }}" tabindex="-1" aria-disabled="true">Вперед</a>
-                    </li>
-                    {% if next_url %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ last_url }}">Конец</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-
-        {% endif %}
     {% endif %}
 
 {% endblock %}

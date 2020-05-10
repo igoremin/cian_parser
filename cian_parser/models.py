@@ -30,12 +30,13 @@ class ObjectInfoDetails(models.Model):
     price = models.IntegerField(verbose_name='Цена', null=True, blank=True)
     price_for_m = models.IntegerField(verbose_name='Цена за квадрат', null=True, blank=True)
     phones = models.TextField(verbose_name='Телефоны', null=True, blank=True)
-    address = models.TextField(verbose_name='Адресс')
-    time_to_the_subway = models.TextField(verbose_name='Время до метро или других мест')
-    params = models.TextField(verbose_name='Параметры')
-    description = models.TextField(verbose_name='Описание')
-    photos = models.TextField(verbose_name='Ссылки на фотографии')
-    url = models.TextField(validators=[URLValidator()], verbose_name='URL')
+    address = models.TextField(verbose_name='Адресс', null=True, blank=True)
+    time_to_the_subway = models.TextField(verbose_name='Время до метро или других мест', null=True, blank=True)
+    params = models.TextField(verbose_name='Параметры', null=True, blank=True)
+    description = models.TextField(verbose_name='Описание', null=True, blank=True)
+    photos = models.TextField(verbose_name='Ссылки на фотографии', null=True, blank=True)
+    url = models.CharField(verbose_name='URL', max_length=200, unique=True)
+    cain_id = models.IntegerField(verbose_name='ID в базе циана', unique=True, db_index=True, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Информация об объекте'

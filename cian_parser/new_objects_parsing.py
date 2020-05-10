@@ -1,40 +1,34 @@
-from .models import MapParserDetails, ObjectInfoDetails, Status, TargetValue
+from .models import MapParserDetails, ObjectInfoDetails, Status, TargetValue, ProxyFile
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from seleniumwire import webdriver
 from bs4 import BeautifulSoup
 from threading import Thread
-from sys import argv
-import mysql.connector
 import unicodedata
 import random
-import os
 import time
-import sqlite3
-import signal
-import threading
 import requests
 import re
-import sys
-
-
-signal.signal(signal.SIGCHLD, signal.SIG_IGN)
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MEDIA_DIR = os.path.join(BASE_DIR, 'media')
-
-proxy_file_name = argv[1]
 
 
 class Bot(Thread):
-    def __init__(self):
+    MEDIA_DIR = settings.MEDIA_DIR
+
+    def __init__(self, proxy_class, price_class):
         """Создаем экземпляр бота"""
         Thread.__init__(self)
 
+        self.proxies = proxy_class
+        self.price = price_class
+
         self.no_proxy = False
 
-        if use_proxy == 2:
+        self.use_proxy = 1
+
+        if self.use_proxy == 2:
             self.proxy = ''
         else:
-            self.proxy, clean_proxy = proxies.get_new_proxy()
+            self.proxy, clean_proxy = self.proxies.get_new_proxy()
 
         """Подключаем настройки прокси к экземпляру бота"""
         options = {
@@ -44,7 +38,7 @@ class Bot(Thread):
         wind_width = random.randint(1000, 1920)
         wind_height = random.randint(750, 1080)
 
-        with open(f'{MEDIA_DIR}/user-agents/user_agents_for_chrome_pk.txt', 'r', encoding='utf-8') as f:
+        with open(f'{settings.MEDIA_DIR}/user-agents/user_agents_for_chrome_pk.txt', 'r', encoding='utf-8') as f:
             user_agent = random.choice([line.strip() for line in f])
 
         self.options = webdriver.ChromeOptions()
@@ -52,7 +46,7 @@ class Bot(Thread):
         self.options.add_argument(f'window-size={wind_width},{wind_height}')
         self.options.add_argument("--disable-blink-features")
         self.options.add_argument("--disable-blink-features=AutomationControlled")
-        # self.options.add_argument("--headless")
+        self.options.add_argument("--headless")
         self.options.add_argument('--disable-extensions')
         self.options.add_argument('--profile-directory=Default')
 
@@ -60,16 +54,16 @@ class Bot(Thread):
         self.options.add_argument(f"user-agent={user_agent}")
 
         """Создаем экземпляр браузера"""
-        if use_proxy == 1:
+        if self.use_proxy == 1:
             self.driver = webdriver.Chrome(
                 options=self.options,
-                executable_path=f'{MEDIA_DIR}/drivers/chromedriver',
+                executable_path=f'{settings.MEDIA_DIR}/drivers/chromedriver',
                 seleniumwire_options=options,
             )
         else:
             self.driver = webdriver.Chrome(
                 options=self.options,
-                executable_path=f'{MEDIA_DIR}/drivers/chromedriver',
+                executable_path=f'{settings.MEDIA_DIR}/drivers/chromedriver',
             )
 
         """Создаем необходимые переменные для работы"""
@@ -90,14 +84,14 @@ class Bot(Thread):
 
         self.options.add_argument(f'window-size={wind_width},{wind_height}')
 
-        self.proxy, clean_proxy = proxies.get_new_proxy()
+        self.proxy, clean_proxy = self.proxies.get_new_proxy()
         options = {
             'proxy': self.proxy
         }
 
         self.driver = webdriver.Chrome(
             options=self.options,
-            executable_path=f'{MEDIA_DIR}/drivers/chromedriver',
+            executable_path=f'{settings.MEDIA_DIR}/drivers/chromedriver',
             seleniumwire_options=options,
         )
 
@@ -106,13 +100,13 @@ class Bot(Thread):
     def get_new_price(self):
         # Получаем новый диапазон цен для поиска объектов по картам
         while True:
-            new_price = price.get_new_value()
+            new_price = self.price.get_new_value()
             if new_price is False:
                 # Цен больше нет, останавливаем цикл
                 break
             else:
                 # Если диапазон существует тогда находим объекты на картах которые соответсвуют запросу
-                self.target = get_json(new_price)
+                self.target = get_json(new_price, self.proxies)
                 if self.target:
                     # Объекты найдены, запускаем браузер для парсинга объектов
                     self.create_new_window()
@@ -125,12 +119,16 @@ class Bot(Thread):
                 data = self.target.pop(0)
             except:
                 break
-            print(f"URL : {data['url']}")
-            if data['url'] not in all_done_urls:
+
+            try:
+                page_data = ObjectInfoDetails.objects.get(cain_id=int(data['pk']))
+            except ObjectDoesNotExist:
+                if settings.DEBUG:
+                    print(f"PARSING URL : {data['url']}")
                 # Если этот урл еще не парсили, начинаем парсинг
                 url = data['url']
                 # Меняем прокси если количество запросов больше цели
-                if use_proxy == 1 and self.step == 20:
+                if self.use_proxy == 1 and self.step == 20:
                     self.reload_bot()
 
                 k = 0
@@ -139,20 +137,24 @@ class Bot(Thread):
                     soup = self.get_page(url)
                     if soup:
                         # Суп взят, берем из него нужные данные
-                        all_done_urls.add(url)
                         self.get_data_from_page(soup, url)
                         break
                     else:
                         k += 1
+            except Exception as err:
+                print(f"ERROR FIND OBJECT WITH ID {data['pk']} , ERROR : {err}")
             else:
-                # Урл уже парсили раньше, обновляем цену на объект если она менялась
-                page_data = db.get_object(data['url'])
-                print('CHECK PRICE')
-                if page_data is not None:
-                    new_price = ''.join(re.findall(r'\d+', data['price']))
-                    print(f'OLD PRICE : {page_data[4]}, NEW PRICE : {new_price}')
-                    if int(new_price) != int(page_data[4]):
-                        db.update_price(page_data[0], new_price)
+                new_price = ''.join(re.findall(r'\d+', data['price']))
+                if int(new_price) != int(page_data.price):
+                    new_price_for_m = int(int(new_price) / int(''.join(re.findall(r'\d+', data['p']))))
+                    if settings.DEBUG:
+                        print(f'CHANGE PRICE. OLD PRICE : {page_data.price}, NEW PRICE : {new_price}, '
+                              f'OLD M PRICE : {page_data.price_for_m}, NEW M PRICE : {new_price_for_m}, '
+                              f'URL : {page_data.url}')
+
+                    page_data.price = int(new_price)
+                    page_data.price_for_m = new_price_for_m
+                    page_data.save()
 
     def get_data_from_page(self, soup, url):
         try:
@@ -226,23 +228,19 @@ class Bot(Thread):
             for image in all_images:
                 rez_all_images = rez_all_images + f"{image.get_attribute('src')}; "
 
-            data = {
-                'Название': name,
-                'Телефон': phone,
-                'Статус': check_status,
-                'ЖК': parent_text,
-                'Адресс': address_text,
-                'Время в пути': time_text,
-                'Цена': price_text,
-                'Цена за метр': price_for_m_text,
-                'Параметры': all_params,
-                'Описание': description_text,
-                'Фотографии': rez_all_images,
-                'URL': url,
-            }
-            db.object_insert(data)
+            try:
+                new_object = ObjectInfoDetails(
+                    title=name, phones=phone, is_active=check_status, jk_name=parent_text, address=address_text,
+                    time_to_the_subway=time_text, price=price_text, price_for_m=price_for_m_text,
+                    params=all_params, description=description_text, photos=rez_all_images, url=url,
+                    cain_id=int(str(url).split('/')[-1])
+                )
+                new_object.save()
+            except Exception as err:
+                print(f"ERROR WITH CREATE NEW OBJECT. URL : {url}, ERROR : {err}")
             self.step += 1
-        except:
+        except Exception as err:
+            print(f'ERROR WITH GET DATA FROM PAGE : {err}')
             pass
 
     def get_page(self, url):
@@ -273,7 +271,7 @@ class Bot(Thread):
 
 
 def get_headers():
-    with open(f'{MEDIA_DIR}/user-agents/user_agents_for_chrome_pk.txt') as u_a:
+    with open(f'{settings.MEDIA_DIR}/user-agents/user_agents_for_chrome_pk.txt') as u_a:
         user_agent = random.choice([row.strip() for row in u_a.readlines()])
     headers = {
         'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;'
@@ -292,7 +290,7 @@ def get_headers():
     return headers
 
 
-def get_json(price):
+def get_json(price, proxy_class):
 
     def add_data(results):
         for d in results['data']['points']:
@@ -309,7 +307,16 @@ def get_json(price):
                           'pk': pk}
 
                 all_results.append(values)
-                db.map_insert(values)
+                new_map_object = MapParserDetails(
+                    title=values['title'],
+                    price=values['price'],
+                    area=values['p'],
+                    floor=values['floor'],
+                    address=values['address'],
+                    url=values['url'],
+                    object_id=values['pk']
+                )
+                new_map_object.save()
 
     min_price = price[0]
     max_price = price[1]
@@ -317,44 +324,39 @@ def get_json(price):
     url = f'https://www.cian.ru/ajax/map/roundabout/?engine_version=2&deal_type=sale&offer_type=flat&region=1&' \
           f'in_polygon[0]=55.566274_37.137084,55.566274_37.954192,55.912587_37.954192,55.912587_37.137084&' \
           f'minprice={min_price}&maxprice={max_price}'
-    data = json_request(url)
+    data = json_request(url, proxy_class)
     if data is not False:
         if 300 < int(data['data']['offers_count']) <= 1500:
-            # print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']} , mod 1")
             add_data(data)
             for p in [2, 3, 4, 5]:
                 new_url_p = f'{url}&p={p}'
-                new_data = json_request(new_url_p)
+                new_data = json_request(new_url_p, proxy_class)
                 if new_data is not False and int(len(new_data['data']['points'])) > 0:
                     add_data(data)
                 else:
                     break
         elif 0 < int(data['data']['offers_count']) <= 300:
-            # print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']} , mod 2")
             add_data(data)
         elif int(len(data['data']['points'])) == 0 or int(data['data']['offers_count']) == 0:
-            # print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']}, PASS")
             pass
         elif int(data['data']['offers_count']) > 1500:
-            # print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']} , mod 3")
             for rm in ['room1=1', 'room2=1', 'room3=1', 'room4=1', 'room5=1', 'room6=1', 'room9=1']:
                 new_url = f'{url}&{rm}'
                 # print(new_url)
                 for p in [1, 2, 3, 4, 5]:
                     new_url_p = f'{new_url}&p={p}'
-                    new_data = json_request(new_url_p)
+                    new_data = json_request(new_url_p, proxy_class)
                     if new_data is not False and int(len(new_data['data']['points'])) > 0:
                         add_data(data)
                     else:
                         break
         else:
-            # print(f"Min price : {min_price} , Max price : {max_price} , result : {data['data']['offers_count']} , BROKEN")
             pass
 
         return all_results if len(all_results) > 0 else False
 
 
-def json_request(url):
+def json_request(url, proxies):
     k = 0
     while k < 10:
         try:
@@ -373,20 +375,17 @@ def json_request(url):
     return False
 
 
-def get_target_value():
+def get_target_value(proxies):
     url = "https://www.cian.ru/ajax/map/roundabout/?engine_version=2&deal_type=sale&offer_type=flat&region=1&" \
           "in_polygon[0]=55.566274_37.137084,55.566274_37.954192,55.912587_37.954192,55.912587_37.137084&"
-    data = json_request(url)
+    data = json_request(url, proxies)
     if data is not False:
-        db.set_target_value(data['data']['offers_count'])
+        set_target_value(data['data']['offers_count'])
 
 
 class AllPriseValues:
     def __init__(self):
         self.all_price = [0, 2000000]
-        # self.all_price = [1999999, 2000000]
-        # for _ in range(0, 1):
-        #     self.all_price.append(self.all_price[-1] + 50000)
         for _ in range(0, 800):
             self.all_price.append(self.all_price[-1] + 50000)
 
@@ -402,166 +401,32 @@ class AllPriseValues:
             return False
 
 
-class DataBase:
-    def __init__(self):
-        self.all_urls = []
-        self.all_map_urls = []
+def clean_map_table():
+    MapParserDetails.objects.all().delete()
 
-        self.conn = mysql.connector.connect(user='root', password='1qaz', database='cian_parser')
 
-        # self.conn = sqlite3.connect(f'{BASE_DIR}/db.sqlite3', check_same_thread=False)
-        self.c = self.conn.cursor(buffered=True)
+def get_all_id():
+    all_cian_id = ObjectInfoDetails.objects.all().values_list('cain_id', flat=True)
+    return all_cian_id
 
-    def object_insert(self, data):
-        values = list(data.values())
-        try:
-            # lock.acquire(True)
-            self.c.execute(
-                """INSERT INTO cian_parser_objectinfodetails (
-                title, phones, is_active, jk_name, address, time_to_the_subway, price, price_for_m, params,
-                description, photos, url
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);""", values
-            )
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR INSERT')
-            print(err)
-        # finally:
-        #     lock.release()
 
-    def map_insert(self, data):
-        values = list(data.values())
-        try:
-            # lock.acquire(True)
-            self.c.execute(
-                """INSERT INTO cian_parser_mapparserdetails (
-                title, price, area, floor, address, url, object_id
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s)""", values
-            )
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR MAP INSERT')
-            print(err)
-        # finally:
-        #     lock.release()
+def set_target_value(new_value):
+    TargetValue.objects.all().delete()
+    new_target = TargetValue(
+        target_value=int(new_value)
+    )
+    new_target.save()
 
-    def clean_map_table(self):
-        try:
-            # lock.acquire(True)
-            self.c.execute(
-                """DELETE FROM cian_parser_mapparserdetails"""
-            )
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR CLEAR MAP TABLE')
-            print(err)
-        # finally:
-        #     lock.release()
 
-    def get_all_urls(self):
-        try:
-            for row in self.c.execute("""SELECT url FROM cian_parser_objectinfodetails"""):
-                self.all_urls.append(row[0])
-            return self.all_urls
-        except TypeError as err:
-            print('ERROR GET ALL URLS')
-            print(err)
-            self.all_urls = []
-            return self.all_urls
-        except Exception as err:
-            print('ERROR GET ALL URLS')
-            print(err)
-
-    def get_all_map_urls(self):
-        try:
-            for row in self.c.execute("""SELECT url FROM cian_parser_mapparserdetails"""):
-                self.all_map_urls.append(row[0])
-            return self.all_map_urls
-        except Exception as err:
-            print('ERROR GET ALL MAP URLS')
-            print(err)
-
-    def get_all_data(self):
-        try:
-            for row in self.c.execute("""SELECT * FROM test_table"""):
-                # print(row)
-                new_row = [row[1], '', '', row[2], row[3], row[4], row[5], row[6], row[7], row[8], '', row[9]]
-                print(new_row)
-
-                # DataBase.insert(new_row)
-        except Exception as err:
-            print('ERROR GET ALL DATA')
-            print(err)
-
-    def get_object(self, url):
-        try:
-            # lock.acquire(True)
-            self.c.execute("""SELECT * FROM cian_parser_objectinfodetails WHERE url='%s'""" % (url, ))
-            data = self.c.fetchone()
-            return data
-        except Exception as err:
-            print('ERROR GET OBJECT')
-            print(err)
-            return None
-        # finally:
-        #     lock.release()
-
-    def del_old_objects(self):
-        try:
-            # lock.acquire(True)
-            all_urls = tuple(self.get_all_map_urls())
-
-            self.c.execute("""DELETE FROM cian_parser_objectinfodetails WHERE url NOT IN {}""".format(all_urls))
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR DELETE OLD OBJECTS')
-            print(err)
-        # finally:
-        #     lock.release()
-
-    def update_price(self, pk, new_price):
-        try:
-            # lock.acquire(True)
-            self.c.execute("""UPDATE cian_parser_objectinfodetails SET price='%s' WHERE id='%s'""" % (new_price, pk))
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR UPDATE PRICE')
-            print(err)
-        # finally:
-        #     lock.release()
-
-    def set_target_value(self, target):
-        try:
-            # lock.acquire(True)
-            self.c.execute("""DELETE FROM cian_parser_targetvalue""")
-            self.conn.commit()
-            self.c.execute("""INSERT INTO cian_parser_targetvalue (target_value) VALUES (%s)""", (int(target), ))
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR SET TARGET VALUE')
-            print(err)
-        # finally:
-        #     lock.release()
-
-    def change_status(self):
-        try:
-            # lock.acquire(True)
-            self.c.execute("""UPDATE cian_parser_status SET status='False' WHERE id=(
-            SELECT (id) FROM cian_parser_status ORDER BY id ASC LIMIT 1)""")
-            self.conn.commit()
-        except Exception as err:
-            print('ERROR CHANGE STATUS')
-            print(err)
-        # finally:
-        #     lock.release()
-
-    def close_db(self):
-        self.c.close()
+def del_old_objects():
+    all_map_urls = MapParserDetails.objects.values_list('url', flat=True)
+    ObjectInfoDetails.objects.exclude(url__in=all_map_urls).delete()
 
 
 class Proxy:
     def __init__(self):
-        with open(f'{MEDIA_DIR}/{proxy_file_name}', 'r', encoding='utf-8') as proxy_file:
+        self.proxy_file_path = ProxyFile.objects.all()[0].proxy_file.path
+        with open(self.proxy_file_path, 'r', encoding='utf-8') as proxy_file:
             all_proxies = [row.strip() for row in proxy_file.readlines()]
             self.proxies = sorted(all_proxies, key=lambda *args: random.random())
 
@@ -586,7 +451,7 @@ class Proxy:
             }
 
             if len(self.proxies) < 1:
-                with open(f'{MEDIA_DIR}/{proxy_file_name}', 'r', encoding='utf-8') as proxy_file:
+                with open(self.proxy_file_path, 'r', encoding='utf-8') as proxy_file:
                     all_proxies = [row.strip() for row in proxy_file.readlines()]
                     not_block_proxies = []
                     for p in all_proxies:
@@ -603,57 +468,26 @@ class Proxy:
         self.block_proxies.append(f"{block_proxy[0]}:{block_proxy[1]}:{block_proxy[2]}:{block_proxy[3]}")
 
 
-class NewBD:
-    @staticmethod
-    def clean_map_table():
-        MapParserDetails.objects.all().delete()
+def start():
+    clean_map_table()
 
-    @staticmethod
-    def get_all_urls():
-        all_urls = ObjectInfoDetails.objects.all().values('url', flat=True)
-        return all_urls
+    all_proxies = Proxy()
+    all_price = AllPriseValues()
 
-    @staticmethod
-    def set_target_value(new_value):
-        TargetValue.objects.all().delete()
-        new_target = TargetValue(
-            target_value=int(new_value)
-        )
-        new_target.save()
+    get_target_value(all_proxies)
 
+    threads = []
 
-lock = threading.Lock()     # Блокировка потоков
+    for _ in range(4):
+        thread = Bot(proxy_class=all_proxies, price_class=all_price)
+        thread.start()
+        threads.append(thread)
 
-price = AllPriseValues()    # Создаем класс для получаения диапазона цен
+    for t in threads:
+        t.join()
 
-# db = DataBase()             # Создаем класс для управления базой
-# db.clean_map_table()        # Отчищаем таблицу карт
+    del_old_objects()
 
-db = NewBD()
-db.clean_map_table()
-
-all_done_urls = set(db.get_all_urls())
-
-proxies = Proxy()
-use_proxy = 1
-
-threads = []
-
-get_target_value()
-
-print(f"ALL DONE URLS : {all_done_urls}")
-
-for _ in range(4):
-    thread = Bot()
-    thread.start()
-    threads.append(thread)
-
-for t in threads:
-    t.join()
-
-db.del_old_objects()
-db.change_status()
-
-db.close_db()
-
-sys.exit()
+    status = Status.objects.all()[0]
+    status.status = False
+    status.save()

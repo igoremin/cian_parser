@@ -20,7 +20,10 @@
         <div class="collapse navbar-collapse test" id="navbarNavDropdown">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="/">Результаты<span class="sr-only">(current)</span></a>
+                    <a class="nav-link" href="{% url 'results_url' %}">Главная<span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'all_results_objects_url' %}">Список объектов<span class="sr-only">(current)</span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'proxy_file_url' %}">Прокси файл<span class="sr-only">(current)</span></a>
@@ -28,33 +31,13 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'all_results_file_url' %}">Файлы с результаатми<span class="sr-only">(current)</span></a>
                 </li>
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'new_map_parser_url' %}">Новый парсинг карт<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'map_parser_list_url' %}">Список парсингов карт<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
+
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'new_objects_parsing_form_url' %}">Новый парсинг<span class="sr-only">(current)</span></a>
                 </li>
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'new_parser_url' %}">Новый парсинг<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'parser_settings_url' %}">Настройки парсера для сайтов<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'load_new_file_url' %}">Загрузить файл с сайтами<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'all_rusprofile_parsings_url' %}">Результаты парсинга Rusprofile<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'new_rusprofile_parsing_url' %}">Новый парсинг Rusprofile<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
-{#                <li class="nav-item">#}
-{#                    <a class="nav-link" href="{% url 'rusprofile_settings_url' %}">Настройки парсера Rusprofile<span class="sr-only">(current)</span></a>#}
-{#                </li>#}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'load_json_dump_url' %}">Загрузить старую базу данных<span class="sr-only">(current)</span></a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/admin/">Admin</a>
                 </li>
