@@ -307,16 +307,20 @@ def get_json(price, proxy_class):
                           'pk': pk}
 
                 all_results.append(values)
-                new_map_object = MapParserDetails(
-                    title=values['title'],
-                    price=values['price'],
-                    area=values['p'],
-                    floor=values['floor'],
-                    address=values['address'],
-                    url=values['url'],
-                    object_id=values['pk']
-                )
-                new_map_object.save()
+                try:
+                    new_map_object = MapParserDetails(
+                        title=values['title'],
+                        price=values['price'],
+                        area=values['p'],
+                        floor=values['floor'],
+                        address=values['address'],
+                        url=values['url'],
+                        object_id=values['pk']
+                    )
+                    new_map_object.save()
+                except Exception as err:
+                    print(f'ERROR WITH WRITE NEW MAP OBJECT : {err}')
+                    pass
 
     min_price = price[0]
     max_price = price[1]
@@ -419,8 +423,11 @@ def set_target_value(new_value):
 
 
 def del_old_objects():
-    all_map_urls = MapParserDetails.objects.values_list('url', flat=True)
-    ObjectInfoDetails.objects.exclude(url__in=all_map_urls).delete()
+    all_map_id = MapParserDetails.objects.values_list('object_id', flat=True)
+
+    for row in ObjectInfoDetails.objects.all():
+        if row.cain_id not in all_map_id:
+            row.delete()
 
 
 class Proxy:

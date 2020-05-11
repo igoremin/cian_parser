@@ -9,8 +9,8 @@ class MapParserDetails(models.Model):
     area = models.CharField(max_length=100, verbose_name='Площадь')
     floor = models.CharField(max_length=100, verbose_name='Этаж')
     address = models.TextField(verbose_name='Адресс')
-    url = models.TextField(validators=[URLValidator()], verbose_name='URL')
-    object_id = models.CharField(max_length=20, verbose_name='ID объекта')
+    url = models.CharField(verbose_name='URL', max_length=200, unique=True)
+    object_id = models.IntegerField(unique=True, db_index=True, verbose_name='ID объекта')
 
     class Meta:
         verbose_name = 'Объекты'
@@ -36,7 +36,7 @@ class ObjectInfoDetails(models.Model):
     description = models.TextField(verbose_name='Описание', null=True, blank=True)
     photos = models.TextField(verbose_name='Ссылки на фотографии', null=True, blank=True)
     url = models.CharField(verbose_name='URL', max_length=200, unique=True)
-    cain_id = models.IntegerField(verbose_name='ID в базе циана', unique=True, db_index=True, null=True, blank=True)
+    cain_id = models.IntegerField(verbose_name='ID в базе циана', unique=True, db_index=True)
 
     class Meta:
         verbose_name = 'Информация об объекте'
