@@ -486,8 +486,9 @@ def start():
     for t in threads:
         t.join()
 
-    del_old_objects()
-
     status = Status.objects.all()[0]
     status.status = False
     status.save()
+
+    del_old_objects()
+
