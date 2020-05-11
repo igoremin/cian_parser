@@ -82,6 +82,7 @@ WSGI_APPLICATION = 'site_engine.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
+        'CONN_MAX_AGE': 3600,
         'OPTIONS': {
             'read_default_file': '/etc/mysql/my.cnf'
         }
