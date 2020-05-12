@@ -18,6 +18,9 @@ class Bot(Thread):
         """Создаем экземпляр бота"""
         Thread.__init__(self)
 
+        if settings.DEBUG:
+            print('CREATE BOT')
+
         self.proxies = proxy_class
         self.price = price_class
 
@@ -73,6 +76,8 @@ class Bot(Thread):
         self.target = []
 
     def run(self):
+        if settings.DEBUG:
+            print('START BOT')
         self.get_new_price()
 
     def reload_bot(self):
@@ -370,9 +375,13 @@ def json_request(url, proxies):
                 proxies=proxies.get_new_proxy()[0]
             )
             if request.status_code == 200:
+                if settings.DEBUG:
+                    print('STATUS COD 200')
                 data = request.json()
                 return data
             else:
+                if settings.DEBUG:
+                    print('STATUS COD FALSE')
                 k += 1
         except:
             k += 1
@@ -380,15 +389,21 @@ def json_request(url, proxies):
 
 
 def get_target_value(proxies):
+    if settings.DEBUG:
+        print('GET TARGET VALUE')
     url = "https://www.cian.ru/ajax/map/roundabout/?engine_version=2&deal_type=sale&offer_type=flat&region=1&" \
           "in_polygon[0]=55.566274_37.137084,55.566274_37.954192,55.912587_37.954192,55.912587_37.137084&"
     data = json_request(url, proxies)
     if data is not False:
+        if settings.DEBUG:
+            print(f"TARGET VALUE {data['data']['offers_count']}")
         set_target_value(data['data']['offers_count'])
 
 
 class AllPriseValues:
     def __init__(self):
+        if settings.DEBUG:
+            print('CREATE PRICE CLASS')
         self.all_price = [0, 2000000]
         for _ in range(0, 800):
             self.all_price.append(self.all_price[-1] + 50000)
@@ -406,6 +421,8 @@ class AllPriseValues:
 
 
 def clean_map_table():
+    if settings.DEBUG:
+        print('CLEAN MAP TABLE')
     MapParserDetails.objects.all().delete()
 
 
@@ -432,6 +449,8 @@ def del_old_objects():
 
 class Proxy:
     def __init__(self):
+        if settings.DEBUG:
+            print('CREATE PROXY CLASS')
         self.proxy_file_path = ProxyFile.objects.all()[0].proxy_file.path
         with open(self.proxy_file_path, 'r', encoding='utf-8') as proxy_file:
             all_proxies = [row.strip() for row in proxy_file.readlines()]
