@@ -242,7 +242,8 @@ class Bot(Thread):
                 )
                 new_object.save()
             except Exception as err:
-                print(f"ERROR WITH CREATE NEW OBJECT. URL : {url}, ERROR : {err}")
+                if settings.DEBUG:
+                    print(f"ERROR WITH CREATE NEW OBJECT. URL : {url}, ERROR : {err}")
             self.step += 1
         except Exception as err:
             print(f'ERROR WITH GET DATA FROM PAGE : {err}')
@@ -324,7 +325,8 @@ def get_json(price, proxy_class):
                     )
                     new_map_object.save()
                 except Exception as err:
-                    print(f'ERROR WITH WRITE NEW MAP OBJECT : {err}')
+                    if settings.DEBUG:
+                        print(f'ERROR WITH WRITE NEW MAP OBJECT : {err}')
                     pass
 
     min_price = price[0]

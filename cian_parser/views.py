@@ -253,33 +253,34 @@ def proxy_file(request):
 
 
 def load_json_dump(request):
-    import json
+    return redirect(results)
+    # import json
 
-    with open(f"{BASE_DIR}/datadump.json", 'r',
-              encoding='utf-8') as js_file:
-        js = json.load(js_file)
-
-    for obj in js:
-        try:
-            if obj['model'] == 'cian_parser.objectinfodetails':
-                new_object = ObjectInfoDetails(
-                    title=obj['fields']['title'],
-                    is_active=obj['fields']['is_active'],
-                    jk_name=obj['fields']['jk_name'],
-                    price=obj['fields']['price'],
-                    price_for_m=obj['fields']['price_for_m'],
-                    phones=obj['fields']['phones'],
-                    address=obj['fields']['address'],
-                    time_to_the_subway=obj['fields']['time_to_the_subway'],
-                    params=obj['fields']['params'],
-                    description=obj['fields']['description'],
-                    photos=obj['fields']['photos'],
-                    url=obj['fields']['url'],
-                    cain_id=str(obj['fields']['url']).split('/')[-1]
-                )
-                new_object.save()
-        except Exception as err:
-            print(f'ERROR WITH CREATE NEW ROW : {err}')
-            pass
-
-    return redirect(all_results)
+    # with open(f"{BASE_DIR}/datadump.json", 'r',
+    #           encoding='utf-8') as js_file:
+    #     js = json.load(js_file)
+    #
+    # for obj in js:
+    #     try:
+    #         if obj['model'] == 'cian_parser.objectinfodetails':
+    #             new_object = ObjectInfoDetails(
+    #                 title=obj['fields']['title'],
+    #                 is_active=obj['fields']['is_active'],
+    #                 jk_name=obj['fields']['jk_name'],
+    #                 price=obj['fields']['price'],
+    #                 price_for_m=obj['fields']['price_for_m'],
+    #                 phones=obj['fields']['phones'],
+    #                 address=obj['fields']['address'],
+    #                 time_to_the_subway=obj['fields']['time_to_the_subway'],
+    #                 params=obj['fields']['params'],
+    #                 description=obj['fields']['description'],
+    #                 photos=obj['fields']['photos'],
+    #                 url=obj['fields']['url'],
+    #                 cain_id=str(obj['fields']['url']).split('/')[-1]
+    #             )
+    #             new_object.save()
+    #     except Exception as err:
+    #         print(f'ERROR WITH CREATE NEW ROW : {err}')
+    #         pass
+    #
+    # return redirect(all_results)
