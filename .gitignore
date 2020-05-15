@@ -3,7 +3,6 @@
 __pycache__
 v_server
 db.sqlite3
-/static
 /media/results_files
 /media/proxy_file
 /cian_parser/migrations
